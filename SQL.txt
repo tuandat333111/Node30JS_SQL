@@ -1,0 +1,109 @@
+CREATE DATABASE db_Node30;
+USE db_Node30;
+CREATE TABLE food_type(
+	type_id INT PRIMARY KEY AUTO_INCREMENT,
+	type_name VARCHAR(50)
+);
+CREATE TABLE food(
+	food_id INT PRIMARY KEY AUTO_INCREMENT,
+	food_name VARCHAR(50),
+	image VARCHAR(50),
+	price FLOAT,
+	description VARCHAR (200),
+	type_id INT,
+	FOREIGN KEY (type_id) REFERENCES food_type(type_id)
+);
+CREATE TABLE sub_food(
+	sub_id INT PRIMARY KEY AUTO_INCREMENT,
+	sub_name VARCHAR(50),
+	sub_price FLOAT,
+	food_id INT,
+	FOREIGN KEY (food_id) REFERENCES food(food_id)
+);
+
+CREATE TABLE users(
+	user_id INT PRIMARY KEY AUTO_INCREMENT,
+	full_name VARCHAR(50),
+	email VARCHAR(50),
+	pass_word VARCHAR(50)
+);
+CREATE TABLE restaurant(
+	res_id INT PRIMARY KEY AUTO_INCREMENT,
+	res_name VARCHAR(50),
+	image VARCHAR(50),
+	description VARCHAR(50)
+);
+CREATE TABLE orders(
+	order_id INT PRIMARY KEY AUTO_INCREMENT,
+	user_id INT,
+	food_id INT,
+	amount INT,
+	codee VARCHAR(50),
+	arr_sub_id VARCHAR(50),
+	FOREIGN KEY (user_id) REFERENCES users(user_id),
+	FOREIGN KEY (food_id) REFERENCES food(food_id)
+# PRIMARY KEY(user_id,food_id)
+);
+CREATE TABLE like_res(
+	like_id INT PRIMARY KEY AUTO_INCREMENT,
+	user_id INT,
+	res_id INT,
+	date_like DATETIME,
+	FOREIGN KEY (user_id) REFERENCES users(user_id),
+	FOREIGN KEY (res_id) REFERENCES restaurant(res_id)
+# PRIMARY KEY(user_id,res_id)
+);
+CREATE TABLE rate_res(
+	rate_id INT PRIMARY KEY AUTO_INCREMENT,
+	user_id INT,
+	res_id INT,
+	amount INT,
+	date_like DATETIME,
+	FOREIGN KEY (user_id) REFERENCES users(user_id),
+	FOREIGN KEY (res_id) REFERENCES restaurant(res_id)
+# PRIMARY KEY(user_id,res_id)
+);
+
+
+----------------
+Trả lời các câu hỏi query:
+1. Tìm 5 người đã like nhà hàng nhiều nhất:
+SELECT u.user_id,u.full_name, COUNT(*) AS count_likes
+FROM like_res AS lr JOIN user AS u ON lr.user_id=u.user_id
+GROUP BY u.user_id
+ORDER BY count_likes DESC
+LIMIT 5;
+
+2. Tìm 2 nhà hàng có lượt like cao nhất
+SELECT res.res_id,res.res_name, COUNT(*) AS count_likes
+FROM like_res AS lr JOIN restaurant AS res ON lr.res_id=res.res_id
+GROUP BY lr.res_id
+ORDER BY count_likes DESC
+LIMIT 2;
+
+3. Tìm người đã đặt hàng nhiều nhất
+SELECT ord.user_id,u.full_name, SUM(ord.amount) AS total_quantity
+FROM `order` AS ord JOIN `user` AS u ON ord.user_id = u.user_id
+GROUP BY ord.user_id
+ORDER BY total_quantity DESC
+LIMIT 1;
+
+4. Tìm người dùng không hoạt động trong hệ thống (không đặt hàng, không like, không đánh giá nhà hàng)
+SELECT *
+FROM `user`
+WHERE user_id NOT IN (
+  SELECT DISTINCT user_id
+  FROM `order`
+  UNION
+  SELECT DISTINCT user_id
+  FROM like_res
+  UNION
+  SELECT DISTINCT user_id
+  FROM rate_res
+);
+ 
+5. Tính trung bình sub_food của một food.
+SELECT food.food_id,food.food_name,AVG(sub_food.sub_price) AS avg_sub_food
+FROM food JOIN sub_food ON food.food_id=sub_food.food_id
+GROUP BY food.food_id
+ORDER BY food.food_id;
